@@ -1,0 +1,10 @@
+(library
+  (name runner)
+  (libraries
+    core
+    year2022)
+  (preprocess
+    (pps
+     ppx_jane))
+  (flags
+    -open Core))

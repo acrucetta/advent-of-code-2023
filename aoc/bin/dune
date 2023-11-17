@@ -1,0 +1,12 @@
+(executable
+  (public_name aoc)
+  (name main)
+  (libraries
+    core
+    core_unix.command_unix
+    runner)
+  (preprocess
+    (pps
+     ppx_jane))
+  (flags
+    -open Core))

@@ -1,0 +1,12 @@
+(library
+  (name year2022)
+  (libraries
+    angstrom
+    core
+    ppx_jane
+    re) 
+  (preprocess
+    (pps
+     ppx_jane))
+  (flags
+    -open Core))
