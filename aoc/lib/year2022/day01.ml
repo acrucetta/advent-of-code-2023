@@ -24,5 +24,10 @@ let part1 input =
 let part2 input =
   (*  Print the input *)
   print_endline input;
-  -1
+
+  (* Get top 3 *)
+  let totals = totals input in 
+  let top3 = Util.Helpers.top_n 3 totals in
+  let sum_of_top_totals = List.fold_left (+) 0 top3 in
+  sum_of_top_totals
 ;;
