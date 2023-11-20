@@ -1,12 +1,9 @@
 (library
-  (name year2022)
+  (name util)
   (libraries
     angstrom
     core
-    ppx_jane
-    re
-    str
-    util) 
+    ppx_jane)
   (preprocess
     (pps
      ppx_jane))
