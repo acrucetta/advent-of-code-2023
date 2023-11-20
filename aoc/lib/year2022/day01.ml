@@ -16,17 +16,13 @@ let part1 input =
   (* Print the list *)
   let totals = totals input in 
     (* Get the max of the totals *)
-    match Util.Helpers.max_int totals with 
-    | Some max -> max
-    | None -> -1
+    let max = Util.Helpers.max_int totals in
+    max
 ;;
 
 let part2 input =
-  (*  Print the input *)
-  print_endline input;
-
   (* Get top 3 *)
   let totals = totals input in 
-  let top3 = Util.Helpers.top_n 3 totals in
-  let sum_of_top_totals = List.sum (module Int) top3 ~f:Fn.id 
+  let top3 = Util.Helpers.top_n 3 totals in 
+  Util.Helpers.sum_ints top3
 ;;
