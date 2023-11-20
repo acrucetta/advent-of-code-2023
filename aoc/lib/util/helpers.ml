@@ -11,7 +11,10 @@ let rec sum_ints lst =
     | [] -> 0
     | h::t -> h + (sum_ints t)
 
-let max_int lst = List.max_elt lst ~compare:Int.compare
+let max_int lst = Core.List.max_elt ~compare lst |> Option.value_exn
 
 let top_n (n:int) (lst:int list) : int list =
   List.take (List.rev (List.sort lst ~compare:Int.compare)) n
+
+let take l ~n = Core.List.take l n
+let drop l ~n = Core.List.drop l n

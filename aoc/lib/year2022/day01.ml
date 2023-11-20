@@ -28,6 +28,5 @@ let part2 input =
   (* Get top 3 *)
   let totals = totals input in 
   let top3 = Util.Helpers.top_n 3 totals in
-  let sum_of_top_totals = List.fold_left (+) 0 top3 in
-  sum_of_top_totals
+  let sum_of_top_totals = List.sum (module Int) top3 ~f:Fn.id 
 ;;
