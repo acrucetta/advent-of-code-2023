@@ -12,6 +12,7 @@ let totals input =
       |> Util.Helpers.sum_ints)
   ;;
 
+
 let part1 input =
   (* Print the list *)
   let totals = totals input in 
@@ -26,3 +27,5 @@ let part2 input =
   let top3 = Util.Helpers.top_n 3 totals in 
   Util.Helpers.sum_ints top3
 ;;
+
+
