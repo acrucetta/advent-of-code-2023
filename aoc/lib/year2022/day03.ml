@@ -1,8 +1,7 @@
-
 (*
 The priorities go from a through z with 1 to 26. Then A through Z with 27 through 52.
  *)
-
+open Base;;
 
 let alphabet = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
 
@@ -30,12 +29,28 @@ let sequences (input : string) : (char array * char array) list =
   )
 ;;
 
+let find_common_char (arr1 : char array) (arr2 : char array) : char option =
+  let set1 = Set.of_array (module Char) arr1 in
+  let set2 = Set.of_array (module Char) arr2 in
+  Set.inter set1 set2 
+  |> Set.to_list
+  |> List.hd
+;;
+
 let part1 input = 
-  print_endline "Part 1: ";
+  let sequences = sequences input in
+  let common_chars = List.map sequences (fun (arr1, arr2) -> 
+    find_common_char arr1 arr2
+  ) in
+  let priorities = List.map common_chars (fun c -> 
+    match c with
+    | Some c -> priority_of_char c
+    | None -> 0
+  ) in
+  List.fold priorities ~init:0 ~f:(+)
 ;;
 
 let part2 input = 
-  print_endline "Part 2: ";
   -1
 ;;
 
