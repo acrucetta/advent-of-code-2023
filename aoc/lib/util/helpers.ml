@@ -18,3 +18,7 @@ let top_n (n:int) (lst:int list) : int list =
 
 let take l ~n = Core.List.take l n
 let drop l ~n = Core.List.drop l n
+
+let string_to_arr (str : string) : char array = 
+  Array.of_list (List.init (String.length str) (String.get str))
+
