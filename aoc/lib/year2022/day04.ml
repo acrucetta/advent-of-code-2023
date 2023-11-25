@@ -10,7 +10,9 @@ type interval = {
 }
 
 let is_contained int1 int2 =  
-  int1.start <= int2.start && int1.end_ >= int2.end_
+  int1.start <= int2.start && int1.end_ >= int2.end_ || 
+  int2.start <= int1.start && int2.end_ >= int1.end_
+;;
 
 let split str delim =
   Str.split (Str.regexp delim) str
@@ -38,7 +40,7 @@ let parse_multiline_input input =
 let part1 input = 
   let interval_pairs = parse_multiline_input input in
   List.map interval_pairs ~f:(fun (int1, int2) -> 
-    if is_contained int1 int2 || is_contained int2 int1 then 1 else 0
+    if is_contained int1 int2 then 1 else 0
     )
   |> List.fold ~init:0 ~f:(+)
 ;;
