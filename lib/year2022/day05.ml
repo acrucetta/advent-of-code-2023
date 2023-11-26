@@ -27,6 +27,7 @@ We can use regex to parse each line to a list of strings. We want
 to keep track of their order so we can use a map to store them.
 i.e., which stack they're on. 
  *)   
+ open Util;;
 
 let stack_map = Map.empty (module String);;
 
@@ -49,7 +50,7 @@ let parse_crates input =
   print_endline crates;
   let raw_crate_lines = Str.split (Str.regexp "\n") crates in 
   let crate_lines = List.map raw_crate_lines ~f:parse_crate_line in
-  print_endline (List.to_string crate_lines ~f:(List.to_string ~f:Fn.id));
+  ()
 
 ;;
 
