@@ -2,7 +2,8 @@
   (name runner)
   (libraries
     core
-    year2022)
+    year2022
+    unix)
   (preprocess
     (pps
      ppx_jane))

@@ -1,3 +1,4 @@
+
 let run2022 day part input =
   match day, part with
   | 1, 1 -> Printf.printf "%i\n" (Year2022.Day01.part1 input)
@@ -8,6 +9,8 @@ let run2022 day part input =
   | 3, 2 -> Printf.printf "%i\n" (Year2022.Day03.part2 input)
   | 4, 1 -> Printf.printf "%i\n" (Year2022.Day04.part1 input)
   | 4, 2 -> Printf.printf "%i\n" (Year2022.Day04.part2 input)
+  | 5, 1 -> Printf.printf "%s\n" (Year2022.Day05.part1 input)
+  | 5, 2 -> Printf.printf "%s\n" (Year2022.Day05.part2 input)
   | day, part -> failwith (Printf.sprintf "Unknown day %i and part %i" day part)
 ;;
 
