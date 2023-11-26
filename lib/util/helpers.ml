@@ -5,7 +5,6 @@ let extract_int_option opt =
     | Some x -> x
     | None -> 0
 
-(* Sums the ints in a list (lst) *)
 let rec sum_ints lst =
   match lst with
     | [] -> 0
@@ -22,5 +21,14 @@ let drop l ~n = Core.List.drop l n
 let string_to_arr (str : string) : char array = 
   Array.of_list (List.init (String.length str) (String.get str))
 
+let rec print_list (lst : 'a list) : unit =
+  match lst with
+  | [] -> ()
+  | head::tails ->
+      Printf.printf "%s\n" head;
+      print_list tails
 
+let rec print_hash (hash : (string, int) Hashtbl.t) : unit =
+  Hashtbl.iteri hash ~f:(fun ~key ~data ->
+      Printf.printf "%s: %d\n" key data)
 

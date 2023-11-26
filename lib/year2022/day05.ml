@@ -36,8 +36,9 @@ let parse_crate_line line =
     try
       let _ = Str.search_forward crate_pattern line pos in
       let crate = Str.matched_group 1 line in
-      extract_crates (crate :: accu) (match_end ())
-    with Not_found -> accu
+      extract_crates (crate :: accu) (pos + 1)
+    with raise_str ->
+      accu
   in
   extract_crates [] 0
 ;;
@@ -48,8 +49,8 @@ let parse_crates input =
   print_endline crates;
   let raw_crate_lines = Str.split (Str.regexp "\n") crates in 
   let crate_lines = List.map raw_crate_lines ~f:parse_crate_line in
-     print_endline (List.hd_exn (List.hd_exn crate_lines));
-    
+  print_endline (List.to_string crate_lines ~f:(List.to_string ~f:Fn.id));
+
 ;;
 
 let part1 input = 
