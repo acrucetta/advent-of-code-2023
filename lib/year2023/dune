@@ -1,10 +1,12 @@
 (library
-  (name runner)
+  (name year2023)
   (libraries
+    angstrom
     core
-    year2022
-    year2023
-    unix)
+    ppx_jane
+    re
+    str
+    util) 
   (preprocess
     (pps
      ppx_jane))
