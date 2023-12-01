@@ -2,11 +2,6 @@
 
 let digits = List.range 0 10 |> List.map ~f:Int.to_string
 
-let explode s =
-  s
-  |> String.to_list
-;;
-
 let lines input =
   input
   |> Str.split (Str.regexp "\n")
@@ -14,17 +9,22 @@ let lines input =
 
 let extract_numbers line =
   line
-  |> explode
+  |> String.to_list
   |> List.filter ~f:(fun c -> Char.is_digit c)
+  |> List.map ~f:(fun c -> String.of_char c)
 ;;
-
 
 let part1 input =
   let lines = lines input in
-  let first_line = List.hd_exn lines in
-  let first_numbers = extract_numbers first_line in
-  print_endline (String.concat ~sep:"" first_numbers);
-  -1
+  let numbers = List.map ~f:(fun line ->
+    let number_row = extract_numbers line in
+    (* Only keep the first and last numbers *)
+    let first = List.hd_exn number_row in
+    let last = List.last_exn number_row in
+    first ^ last
+  ) lines in
+  let sum = List.map ~f:Int.of_string numbers |> List.fold ~init:0 ~f:(+) in
+  sum
 ;;
 
 let part2 input =
