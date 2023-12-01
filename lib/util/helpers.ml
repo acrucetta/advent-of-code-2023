@@ -24,7 +24,7 @@ let string_to_arr (str : string) : char array =
 (* Print list as [a;b;c;d] *)
 let print_list (lst : 'a list) : unit =
   Printf.printf "[ ";
-  List.iter lst ~f:(fun x -> Printf.printf "%s;" x);
+  List.iter lst ~f:(fun x -> Printf.printf "%s ;" x);
   Printf.printf "]\n"
 
 let rec print_hash (hash : (string, int) Hashtbl.t) : unit =

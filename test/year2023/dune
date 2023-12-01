@@ -2,7 +2,7 @@
   (name year2023_test)
   (libraries
     ppx_jane
-    year2022)
+    year2023)
   (inline_tests)
   (preprocess
     (pps
