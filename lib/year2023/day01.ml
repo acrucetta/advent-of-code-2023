@@ -1,13 +1,10 @@
 
 
-let numbers = ["one"; "two"; "three"; "four"; "five"; "six"; "seven"; "eight"; "nine"]
-
 let split_into_lines input =
   input
   |> Str.split (Str.regexp "\n")
 ;;
 
-(* Function to print each element of a list *)
 let print_list lst =
   List.iter lst ~f:(fun item ->
     print_endline (match item with
@@ -74,10 +71,16 @@ let part2 input =
   let numbers = List.map ~f:(fun line ->
     let number_row = extract_digits_and_numbers line in
     (* Only keep the first and last numbers *)
-    let first = List.hd_exn number_row in
-    let last = List.last_exn number_row in
-    first ^ last
+    if List.length number_row = 0 then
+      "0"
+    else if List.length number_row = 1 then
+      List.hd_exn number_row
+    else
+      let first = List.hd_exn number_row in
+      let last = List.last_exn number_row in
+      first ^ last
   ) lines in
+  Util.Helpers.print_list numbers;
   let sum = List.map ~f:Int.of_string numbers |> List.fold ~init:0 ~f:(+) in
   sum
 ;;
