@@ -44,13 +44,21 @@ Then will use the list to convert the spelled out numbers to digits.
 *)
 let extract_digits_and_numbers line =
   let re = Str.regexp "\\(one\\|two\\|three\\|four\\|five\\|six\\|seven\\|eight\\|nine\\|[0-9]\\)" in
+  let rev_re = Str.regexp "\\(eno\\|owt\\|eerht\\|ruof\\|evif\\|xis\\|neves\\|thgie\\|enin\\|[0-9]\\)" in
   let regex_matches = Str.full_split re line in
   let matches = List.map ~f:(fun match_ ->
     match match_ with
     | Str.Delim s -> Some (to_digit s)
     | Str.Text _ -> None
-  ) regex_matches in 
-  List.filter_opt matches
+  ) regex_matches in
+  let rev_regex_matches = Str.full_split rev_re (String.rev line) in
+  let rev_matches = List.map ~f:(fun match_ ->
+    match match_ with
+    | Str.Delim s -> Some (to_digit (String.rev s))
+    | Str.Text _ -> None
+  ) rev_regex_matches in 
+  let all_matches = List.append matches (List.rev rev_matches) in
+  List.filter_opt all_matches
 ;;
 
   let part1 input =
