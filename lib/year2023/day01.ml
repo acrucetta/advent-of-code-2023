@@ -88,7 +88,6 @@ let part2 input =
       let last = List.last_exn number_row in
       first ^ last
   ) lines in
-  Util.Helpers.print_list numbers;
   let sum = List.map ~f:Int.of_string numbers |> List.fold ~init:0 ~f:(+) in
   sum
 ;;

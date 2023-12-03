@@ -27,56 +27,78 @@ Goal: Determine which games would have been possible if the bag contained 12 red
 
 module P = Util.Parser
 open Angstrom
+include Angstrom.Let_syntax
 
-type color = Blue | Red | Green
-type counts = {color: string; count: int}
 
-let color_of_string = function
-  | "blue" -> Blue
-  | "red" -> Red
-  | "green" -> Green
-  | _ -> failwith "Invalid color"
+type draw = {color: string; count: int}
+type draws = draw list
+type game = {id: int; round : draws list}
 
-(* Parser for a number *)
-let number = take_while1 (function '0' .. '9' -> true | _ -> false) >>| int_of_string
+let color_p = P.choice [P.string "red"; P.string "green"; P.string "blue"]
+let draw_p =
+  let%map count = P.integer <* P.char ' ' and 
+      color = color_p in 
+      {color = color; count = count}
 
-(* Parser for a color *)
-let color = take_while1 (function 'a' .. 'z' | 'A' .. 'Z' -> true | _ -> false)
+let draws_p = P.sep_by1 (P.string ", ") draw_p
+let round_p = P.sep_by1 (P.string "; ") draws_p
+let game_p =
+  let%map id = P.string "Game " *> P.integer <* P.string ": " and
+      round = round_p in
+      {id = id; round = round}
 
-(* [color_count] parses "3 blue" and returns {color = Blue; count = 3} *)
-let color_count =
-  lift2 (fun count color -> ({color = color; count})) number (char ' ' *> color)
+let games_p = P.sep_by1 P.end_of_line game_p
 
-(* [group] parses "3 blue, 4 red" and returns [{color = Blue; count = 3}; {color = Red; count = 4}] *)
-let group = sep_by (char ',') color_count <* skip_many (char ' ')
-
-(* [line_parser] parses "3 blue, 4 red; 1 red, 2 green, 6 blue; 2 green" and 
-   returns [[{color = Blue; count = 3}; {color = Red; count = 4}]; 
-   [{color = Red; count = 1}; {color = Green; count = 2};
-    {color = Blue; count = 6}]; [{color = Green; count = 2}]] *)
-let line_parser = sep_by (char ';') group <* skip_many (char ' ')
-
-let aggregate_max_counts groups =
+let max_draws round =
   let table = Hashtbl.create (module String) in
-  List.iter ~f:(fun group ->
-      List.iter ~f:(fun {color; count} ->
-          let current_count = Hashtbl.find table color |> Option.value ~default:0 in
-          Hashtbl.set table ~key:color ~data:(max current_count count)
-        ) group
-    ) groups;
+  List.iter (List.concat round) ~f:(fun draw ->
+    let count = Hashtbl.find table draw.color in
+    match count with
+    | Some c -> Hashtbl.set table ~key:draw.color ~data:(max c draw.count)
+    | None -> Hashtbl.set table ~key:draw.color ~data:draw.count
+  );
   table
 
-let parse_line line =
-  match parse_string ~consume:All line_parser line with
-  | Ok groups -> aggregate_max_counts groups
-  | Error msg -> failwith msg
+let max_counts = [("green", 13); ("blue", 14); ("red", 12)]
 
-let part1 input = 
-  let result = parse_line "Game 1: 3 blue, 4 red; 1 red, 2 green, 6 blue; 2 green" in
-  Hashtbl.iteri result ~f:(fun ~key ~data ->
-      Printf.printf "%s: %d\n" key data
-    );
-    -1
+(* 
+  The game is possible if the count of each color is less than the max count
+  If the game is possible, we return the id of the game, otherwise we return 0
+*)
+let is_game_possible game = 
+  let table = Hashtbl.create (module String) in
+  let max_draws = max_draws game.round in
+  let is_possible = List.for_all max_counts ~f:(fun (color, count) ->
+    let game_count = Hashtbl.find max_draws color in
+    match game_count with
+    | Some c -> c <= count
+    | None -> false
+  ) in
+  if is_possible then game.id else 0
 ;;
 
-let part2 input = -1;;
+(* Multiply each of the max number of cubes
+   and return the power *)
+let power_cubes max_draws = 
+  let power = Hashtbl.fold max_draws ~init:1 ~f:(fun ~key:_ ~data:count acc ->
+    acc * count
+  ) in
+  power
+
+let part1 input = 
+    input 
+    |> P.parse_exn games_p
+    |> List.map ~f:is_game_possible
+    |> List.fold_left ~init:0 ~f:(+) 
+;;
+
+let part2 input = 
+  let games = input |> P.parse_exn games_p in
+  let powers = List.map games ~f:(fun game -> 
+    let max_draws = max_draws game.round in
+    let power = power_cubes max_draws in
+    power
+  ) in 
+  List.fold_left powers ~init:0 ~f:( + )
+;;
+  
