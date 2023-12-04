@@ -30,9 +30,35 @@ let cards input =
       List.last_exn card
       )
 
+let get_matches winners numbers =
+  -1
+;;
+
+let is_whitespace c = String.is_empty (String.strip c)
+
+(* 
+   [get_score] will load each string of [card]
+   separate them by "|" and store each side
+  into a list of numbers.
+
+  Then it will iterate over the numbers on the left
+  and find matches in the right side; if there's a match
+  we keep the number if not, we filter it out
+ *)
+let get_score card =
+  let sides = sp ~on:['|'] card in
+  let winners = sides |> List.hd_exn |> sp ~on:[' '] |> List.filter is_whitespace in
+  let numbers = sides |> List.last_exn |> sp ~on:[' '] |> List.filter is_whitespace in
+  (winners, numbers)
+;;
+
 let part1 input =
   let cards = cards input in
-  print_endline (List.hd_exn cards);
+  let sample_card = List.hd_exn cards in
+  let (winners, numbers) = get_score sample_card in
+  (* Print the winners and numbers *)
+  let () = List.iter winners ~f:(fun x -> print_endline x) in
+  -1
 ;;
 
 let part2 input =

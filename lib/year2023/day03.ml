@@ -18,8 +18,9 @@ let get_directions = function
   | UpLeft -> (-1, -1) | UpRight -> (1, -1) | DownLeft -> (-1, 1) | DownRight -> (1, 1)
 
 let is_valid_coord (row, col) grid =
-  row >= 0 && col >= 0 && row < length grid && col < length (hd grid)
+  row >= 0 && col >= 0 && row < length grid && col < length (hd_exn grid)
 
+  (*
 let is_adjacent_symbol (row, col) grid =
   exists ~f:(fun dir ->
     let (dx, dy) = get_directions dir in
@@ -49,10 +50,8 @@ let load_numbers grid =
     ) acc (0 --^ (length (hd grid)))
   ) ([], 0) (0 --^ (length grid))
   |> fst
+*)
+let part1 input = -1;;
 
-let part1 input =
-  let grid = build_grid input in 
-  let numbers = load_numbers grid in
-  fold_left (fun acc num -> acc + int_of_string num) 0 numbers
 
-let part2 input = -1
+let part2 input = -1;;
