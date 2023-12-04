@@ -30,8 +30,18 @@ let cards input =
       List.last_exn card
       )
 
-let get_matches winners numbers =
-  -1
+
+(*
+  [get_matches] will iterate over each number in [numbers]
+  and find a match in [winners] if there's a match we keep
+  the number if not, we filter it out. We will return an int
+  representing the score for the card.
+*)
+let get_score winners numbers =
+  let matches = filter ~f:(fun x -> not (mem x winners)) numbers in  
+  let length_matches = (length matches) in
+  if length_matches = 0 then 0
+  else Z.pow (Z.of_int 2) (length_matches - 1) |> Z.to_int
 ;;
 
 let is_whitespace c = String.is_empty (String.strip c)
@@ -45,20 +55,21 @@ let is_whitespace c = String.is_empty (String.strip c)
   and find matches in the right side; if there's a match
   we keep the number if not, we filter it out
  *)
-let get_score card =
+let get_cards card =
   let sides = sp ~on:['|'] card in
-  let winners = sides |> List.hd_exn |> sp ~on:[' '] |> List.filter is_whitespace in
-  let numbers = sides |> List.last_exn |> sp ~on:[' '] |> List.filter is_whitespace in
+  let winners = sides |> List.hd_exn |> sp ~on:[' '] |> filter ~f:(fun x -> not (is_whitespace x)) in
+  let numbers = sides |> List.last_exn |> sp ~on:[' '] |> filter ~f:(fun x -> not (is_whitespace x)) in
   (winners, numbers)
 ;;
 
 let part1 input =
   let cards = cards input in
-  let sample_card = List.hd_exn cards in
-  let (winners, numbers) = get_score sample_card in
-  (* Print the winners and numbers *)
-  let () = List.iter winners ~f:(fun x -> print_endline x) in
-  -1
+  cards
+    |> map ~f:(fun card ->
+        let (winners, numbers) = get_cards card in
+        get_score winners numbers
+      )
+    |> fold_left ~init:0 ~f:(+)
 ;;
 
 let part2 input =

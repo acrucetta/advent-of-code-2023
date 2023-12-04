@@ -4,6 +4,7 @@
     angstrom
     core
     ppx_jane
+    zarith
     re
     str
     util) 
