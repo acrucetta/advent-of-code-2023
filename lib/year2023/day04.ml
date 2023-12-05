@@ -18,17 +18,17 @@ Approach:
 - Based on the length the score will be 2^length-1
 - Return the fold left sum of all the lengths as output
  *)
-open List
 
 let sp = String.split_on_chars
 
 let cards input =
   input
   |> sp ~on:['\n']
-  |> map ~f:(fun card ->
+  |> List.map ~f:(fun card ->
       let card = sp ~on:[':'] card in
       List.last_exn card
       )
+      |> List.filter ~f:(fun x -> not (String.is_empty x))
 
 
 (*
@@ -37,12 +37,19 @@ let cards input =
   the number if not, we filter it out. We will return an int
   representing the score for the card.
 *)
-let get_score winners numbers =
-  let matches = filter ~f:(fun x -> not (mem x winners)) numbers in  
-  let length_matches = (length matches) in
+let get_powerscore winners numbers =
+  let matches = List.filter ~f:(List.mem ~equal:String.equal winners) numbers in
+  let length_matches = (List.length matches) in
   if length_matches = 0 then 0
   else Z.pow (Z.of_int 2) (length_matches - 1) |> Z.to_int
 ;;
+
+let get_countscore winners numbers =
+  let matches = List.filter ~f:(List.mem ~equal:String.equal winners) numbers in
+  let length_matches = (List.length matches) in
+  if length_matches = 0 then 0
+  else length_matches
+  ;;
 
 let is_whitespace c = String.is_empty (String.strip c)
 
@@ -57,21 +64,55 @@ let is_whitespace c = String.is_empty (String.strip c)
  *)
 let get_cards card =
   let sides = sp ~on:['|'] card in
-  let winners = sides |> List.hd_exn |> sp ~on:[' '] |> filter ~f:(fun x -> not (is_whitespace x)) in
-  let numbers = sides |> List.last_exn |> sp ~on:[' '] |> filter ~f:(fun x -> not (is_whitespace x)) in
+  let winners = sides |> List.hd_exn |> sp ~on:[' '] |> List.filter ~f:(fun x -> not (is_whitespace x)) in
+  let numbers = sides |> List.last_exn |> sp ~on:[' '] |> List.filter ~f:(fun x -> not (is_whitespace x)) in
   (winners, numbers)
 ;;
 
 let part1 input =
   let cards = cards input in
   cards
-    |> map ~f:(fun card ->
+    |> List.map ~f:(fun card ->
         let (winners, numbers) = get_cards card in
-        get_score winners numbers
+        get_powerscore winners numbers
       )
-    |> fold_left ~init:0 ~f:(+)
+    |> List.fold_left ~init:0 ~f:(+)
+;;
+
+let cascade_counts (arr : int array) (matches : int list) = 
+  let len = Array.length arr in
+  for idx = 0 to len - 1 do
+    if idx < List.length matches then
+      let match_count = List.nth_exn matches idx in
+      for i = 1 to match_count do 
+        let next_idx = idx + i in
+        if next_idx < len then
+          arr.(next_idx) <- arr.(next_idx) + arr.(idx)
+      done
+  done
+;;
+
+let print_int_array arr =
+  Array.iter arr ~f:(fun x -> print_int x; print_string " ");
+  print_string "\n"
+
+let print_list_int arr =
+  List.iter arr ~f:(fun x -> print_int x; print_string " ");
+  print_string "\n"
+
+let print_list_string arr =
+  List.iter arr ~f:(fun x -> print_string x; print_string "\n");
 ;;
 
 let part2 input =
-  -1
+  let cards = cards input in
+  let matches = List.map ~f:(fun card ->
+      let (winners, numbers) = get_cards card in
+      let score = get_countscore winners numbers in
+      score
+      ) cards in
+      let max_matches = List.length cards in
+      let scratchcard_counts = Array.create ~len:max_matches 1 in
+      cascade_counts scratchcard_counts matches;
+      Array.sum (module Int) scratchcard_counts ~f:(fun x -> x)
 ;;

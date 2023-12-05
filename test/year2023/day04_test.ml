@@ -9,10 +9,10 @@ Card 6: 31 18 13 56 72 | 74 77 10 23 35 67 36 11
 
 let%expect_test "2023 day4 part1" =
   Printf.printf "%i" @@ Year2023.Day04.part1 input;
-  [%expect {|8|}]
+  [%expect {|13|}]
 ;;
 
 let%expect_test "2023 day4 part2" =
   Printf.printf "%i" @@ Year2023.Day04.part2 input;
-  [%expect {| -1 |}]
+  [%expect {| 30 |}]
 ;;
