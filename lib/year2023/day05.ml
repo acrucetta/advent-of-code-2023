@@ -131,13 +131,20 @@ let rec find_in_map_ranges seed_range map =
   match map with
   | [] -> seed_range
   | range::other_ranges -> 
-      if seed_range.start_ >= range.source_start && seed_range.end_ <= range.source_end then
-        {
-        start_ = seed_range.start_ + (range.destination_start - range.source_start);
-        end_ = seed_range.end_ + (range.destination_end - range.source_end);
-        }
-    else 
-      find_in_map_ranges seed_range other_ranges
+      if seed_range.start_ <= (range.source_start+range.length-1) &&
+      seed_range.end_ >= (range.source_start) then
+        let overlap = {
+          start_ = max seed_range.start_ range.source_start;
+          end_ = min seed_range.end_ (range.source_start+range.length-1);
+        } in
+        let offset = overlap.start_ - range.source_start in
+        let new_range = {
+          start_ = range.destination_start + offset;
+          end_ = range.destination_start + offset + (overlap.end_ - overlap.start_);
+        } in
+        find_in_map_ranges new_range other_ranges
+      else
+        find_in_map_ranges seed_range other_ranges
 
 let rec find_in_map seed map =
   match map with
@@ -184,5 +191,6 @@ let part2 input =
   let maps = parse_maps input in
   let locations = map expanded_seeds ~f:(fun seed_range -> find_location_range seed_range maps) in
   let lowest_range = List.min_elt locations ~compare:(fun a b -> Int.compare a.start_ b.start_) |> Option.value_exn in
+  print_endline (Printf.sprintf "Lowest range is %d-%d" lowest_range.start_ lowest_range.end_);
   lowest_range.start_
 ;;
