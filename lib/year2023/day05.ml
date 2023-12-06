@@ -69,13 +69,39 @@ type interval = {
   source_end: int;
   length: int;
 }
-[@@deriving equal]
 
-let seeds input = 
+type seed_range = {
+  start_: int;
+  end_: int;
+}
+
+let single_seeds input = 
   let seed_line = hd_exn (sp "\n\n" input) in
   let seeds = List.last_exn (sp ":" seed_line) in
   let seed_list = sp " " seeds in
   List.map seed_list ~f:int_of_string
+;;
+
+let pair_seeds input =
+  let seed_line = hd_exn (sp "\n\n" input) in
+  let seeds = List.last_exn (sp ":" seed_line) in
+  let seed_list = sp " " seeds in
+  let rec pair_seeds seed_list =
+    match seed_list with
+    | [] -> []
+    | [_] -> []
+    | a::b::rest -> (a,b)::(pair_seeds rest)
+  in
+  pair_seeds seed_list
+
+let explode_seed_pairs seed_pairs = 
+  map seed_pairs ~f:(fun (seed,length) ->
+    let seed = Int.of_string seed in
+    let length = Int.of_string length in
+    {
+      start_ = seed;
+      end_ = seed + length - 1;
+    })
 ;;
 
 let parse_maps input =
@@ -101,21 +127,40 @@ let parse_maps input =
   in
   List.map maps ~f:parse_map
 
+let rec find_in_map_ranges seed_range map =
+  match map with
+  | [] -> seed_range
+  | range::other_ranges -> 
+      if seed_range.start_ >= range.source_start && seed_range.end_ <= range.source_end then
+        {
+        start_ = seed_range.start_ + (range.destination_start - range.source_start);
+        end_ = seed_range.end_ + (range.destination_end - range.source_end);
+        }
+    else 
+      find_in_map_ranges seed_range other_ranges
+
 let rec find_in_map seed map =
   match map with
   | [] -> seed
   | range::other_ranges -> 
-    if seed >= range.source_start && seed <= range.source_end then
-      seed + (range.destination_start - range.source_start)
+      if seed >= range.source_start && seed <= range.source_end then
+        seed + (range.destination_start - range.source_start)
     else 
       find_in_map seed other_ranges
 
-let rec find_location seed maps =
+let rec find_location_range seed_range maps =
+  match maps with
+  | [] -> seed_range
+  | map::other_maps -> 
+    let location = find_in_map_ranges seed_range map in
+    find_location_range location other_maps
+
+let rec find_location_seed seed maps =
   match maps with
   | [] -> seed
   | map::other_maps -> 
     let location = find_in_map seed map in
-    find_location location other_maps
+    find_location_seed location other_maps
 
 let print_int_list l = 
   List.iter l ~f:(fun x -> print_int x; print_string " ");
@@ -127,12 +172,17 @@ let print_interval i =
 ;;
 
 let part1 input  = 
-  let seed_list = seeds input in 
+  let seed_list = single_seeds input in 
   let maps = parse_maps input in
-  let locations = map seed_list ~f:(fun seed -> find_location seed maps) in
+  let locations = map seed_list ~f:(fun seed -> find_location_seed seed maps) in
   List.min_elt locations ~compare:Int.compare |> Option.value_exn
 ;;
 
 let part2 input = 
-  -1
+  let seed_pairs = pair_seeds input in
+  let expanded_seeds = explode_seed_pairs seed_pairs in
+  let maps = parse_maps input in
+  let locations = map expanded_seeds ~f:(fun seed_range -> find_location_range seed_range maps) in
+  let lowest_range = List.min_elt locations ~compare:(fun a b -> Int.compare a.start_ b.start_) |> Option.value_exn in
+  lowest_range.start_
 ;;
