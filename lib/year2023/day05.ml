@@ -64,15 +64,12 @@ let sp on = Str.split (Str.regexp on)
 
 type interval = {
   destination_start: int;
+  destination_end: int;
   source_start: int;
+  source_end: int;
   length: int;
 }
-
-type map = {
-  source: string;
-  destination: string;
-  ranges: interval list;
-}
+[@@deriving equal]
 
 let seeds input = 
   let seed_line = hd_exn (sp "\n\n" input) in
@@ -82,32 +79,58 @@ let seeds input =
 ;;
 
 let parse_maps input =
-  let maps = sp "\n\n" input in
+  let maps = tl_exn (sp "\n\n" input) in
   let parse_map map = 
-    let lines = sp "\n" map in
+    let lines = tl_exn (sp "\n" map) in 
     let parse_line line = 
       let parts = sp " " line in
-      let destination_start = List.nth_exn parts 0 in
-      let source_start = List.nth_exn parts 1 in
-      let length = List.nth_exn parts 2 in
-      {destination_start = int_of_string destination_start;
-       source_start = int_of_string source_start;
-       length = int_of_string length}
+      let length = Int.of_string (List.nth_exn parts 2) in
+      let destination_start = Int.of_string (List.nth_exn parts 0) in
+      let destination_end = destination_start + length - 1 in
+      let source_start = Int.of_string (List.nth_exn parts 1) in
+      let source_end = source_start + length -1 in
+      {
+        destination_start;
+        destination_end;
+        source_start;
+        source_end;
+        length;
+      }
     in
     List.map lines ~f:parse_line
   in
   List.map maps ~f:parse_map
+
+let rec find_in_map seed map =
+  match map with
+  | [] -> seed
+  | range::other_ranges -> 
+    if seed >= range.source_start && seed <= range.source_end then
+      seed + (range.destination_start - range.source_start)
+    else 
+      find_in_map seed other_ranges
+
+let rec find_location seed maps =
+  match maps with
+  | [] -> seed
+  | map::other_maps -> 
+    let location = find_in_map seed map in
+    find_location location other_maps
 
 let print_int_list l = 
   List.iter l ~f:(fun x -> print_int x; print_string " ");
   print_string "\n";
 ;;
 
+let print_interval i = 
+  print_string (Printf.sprintf "%d-%d -> %d-%d\n" i.source_start i.source_end i.destination_start i.destination_end)
+;;
+
 let part1 input  = 
   let seed_list = seeds input in 
-  seed_list;
-  print_int_list seed_list;
-  -1
+  let maps = parse_maps input in
+  let locations = map seed_list ~f:(fun seed -> find_location seed maps) in
+  List.min_elt locations ~compare:Int.compare |> Option.value_exn
 ;;
 
 let part2 input = 
