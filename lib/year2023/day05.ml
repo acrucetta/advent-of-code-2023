@@ -162,7 +162,6 @@ let rec find_location_range seed_range maps =
   | [] -> seed_range
   | map::other_maps -> 
     let locations = find_in_map_ranges seed_range map in
-    find_location_range locations other_maps
 
 
 let rec find_location_seed seed maps =
