@@ -27,7 +27,10 @@ let run2023 day part input =
   | 5, 1 -> Printf.printf "%i\n" (Year2023.Day05.part1 input)
   | 5, 2 -> Printf.printf "%i\n" (Year2023.Day05.part2 input)
   | 6, 1 -> Printf.printf "%i\n" (Year2023.Day06.part1 input)
-  | 6, 2 -> Printf.printf "%i\n" (Year2023.Day06.part2 input) | day, part -> failwith (Printf.sprintf "Unknown day %i and part %i" day part) 
+  | 6, 2 -> Printf.printf "%i\n" (Year2023.Day06.part2 input) 
+  | 7, 1 -> Printf.printf "%i\n" (Year2023.Day07.part1 input)
+  | 7, 2 -> Printf.printf "%i\n" (Year2023.Day07.part2 input)
+  | day, part -> failwith (Printf.sprintf "Unknown day %i and part %i" day part) 
 
 let run year day part =
   let path = Printf.sprintf "data/%i/day%02i.txt" year day in

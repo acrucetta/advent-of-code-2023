@@ -1,6 +1,6 @@
 open List
 
-let sp = String.split_on_chars
+let sp on = Str.split (Str.regexp on)
 
 let part1 input =
   -1
