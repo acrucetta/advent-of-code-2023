@@ -20,11 +20,14 @@ let sp on = Str.split (Str.regexp on)
 
   E.g., 288 (4*8*9)
 
+   (Time - Held Time) * Speed >= Record Distance
+   (7-x)*x >= 9
+
   Assuming: 
 
  *)
 
-type opponent_stats = {
+type race_record = {
   time: int;
   distance: int;
   speed: float;
@@ -51,14 +54,44 @@ let parse_races input =
       speed = float_of_string d /. float_of_string t;
 }) 
 
+let parse_big_race input = 
+  let lines = sp "\n" input in
+  let time = hd_exn lines |> sp ":" |> last_exn |> sp " " |> filter_whitespace |> String.concat in
+  let distance = last_exn lines |> sp ":" |> last_exn |> sp " " |> filter_whitespace |> String.concat in
+  {
+    time = int_of_string time;
+    distance = int_of_string distance;
+    speed = float_of_string distance /. float_of_string time;
+  }
+
+let rec calculate_charging_times record winning_times =
+  let rec calculate_charging_times' record winning_times time =
+    if record.time = time then 
+      winning_times
+    else if record.distance < (record.time - time) * time then
+      calculate_charging_times' record (time :: winning_times) (time + 1)
+    else
+      calculate_charging_times' record winning_times (time + 1)
+  in calculate_charging_times' record winning_times 1
+
+let print_int_list_list = 
+  iter ~f:(fun list -> 
+    print_endline (String.concat ~sep:", " (map list ~f:string_of_int))
+  )
 
 let part1 input =
-  let opponents = parse_races input in
-  print_endline (Printf.sprintf "Opponents: %d" (length opponents));
-  print_endline (Printf.sprintf "Sample Opponent -> Speed %f Distance %d" (hd_exn opponents).speed (hd_exn opponents).distance);
+  let records = parse_races input in
+  let winning_times = map records ~f:(fun record -> calculate_charging_times record []) in
+  print_int (length winning_times);
+  print_int (length (hd_exn winning_times));
+  let count_winning_times = map winning_times ~f:(fun times -> length times) in
+  let product = fold count_winning_times ~init:1 ~f:( * ) in
+  print_endline (Printf.sprintf "Winning Times: %d" product);
   -1
 ;;
 
 let part2 input =
-  -1
+  let big_record = parse_big_race input in
+  let winning_times = calculate_charging_times big_record [] in
+  length winning_times
 ;;
