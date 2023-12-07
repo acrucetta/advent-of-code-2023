@@ -127,23 +127,25 @@ let parse_maps input =
   in
   List.map maps ~f:parse_map
 
-let rec find_in_map_ranges seed_range map =
+  let rec find_in_map_ranges seed_range map =
   match map with
   | [] -> seed_range
   | range::other_ranges -> 
-      if seed_range.start_ <= (range.source_start+range.length-1) &&
-      seed_range.end_ >= (range.source_start) then
+      if seed_range.start_ <= range.source_end &&
+      seed_range.end_ >= range.source_start then
         let overlap = {
           start_ = max seed_range.start_ range.source_start;
-          end_ = min seed_range.end_ (range.source_start+range.length-1);
+          end_ = min seed_range.end_ range.source_end;
         } in
-        let offset = overlap.start_ - range.source_start in
+        let offset = range.destination_start - range.source_start in
         let new_range = {
-          start_ = range.destination_start + offset;
-          end_ = range.destination_start + offset + (overlap.end_ - overlap.start_);
+          start_ = overlap.start_ + offset;
+          end_ = overlap.end_ + offset;
         } in
-        find_in_map_ranges new_range other_ranges
+        print_endline (Printf.sprintf "Seed range %d-%d matched to the source range %d-%d, offset %d, resulting in %d-%d" seed_range.start_ seed_range.end_ range.source_start range.source_end offset new_range.start_ new_range.end_);
+        new_range
       else
+        let () = print_endline (Printf.sprintf "Seed range %d-%d did not match to the source range %d-%d" seed_range.start_ seed_range.end_ range.source_start range.source_end) in
         find_in_map_ranges seed_range other_ranges
 
 let rec find_in_map seed map =
@@ -159,8 +161,9 @@ let rec find_location_range seed_range maps =
   match maps with
   | [] -> seed_range
   | map::other_maps -> 
-    let location = find_in_map_ranges seed_range map in
-    find_location_range location other_maps
+    let locations = find_in_map_ranges seed_range map in
+    find_location_range locations other_maps
+
 
 let rec find_location_seed seed maps =
   match maps with
@@ -168,6 +171,7 @@ let rec find_location_seed seed maps =
   | map::other_maps -> 
     let location = find_in_map seed map in
     find_location_seed location other_maps
+;;
 
 let print_int_list l = 
   List.iter l ~f:(fun x -> print_int x; print_string " ");
@@ -190,7 +194,5 @@ let part2 input =
   let expanded_seeds = explode_seed_pairs seed_pairs in
   let maps = parse_maps input in
   let locations = map expanded_seeds ~f:(fun seed_range -> find_location_range seed_range maps) in
-  let lowest_range = List.min_elt locations ~compare:(fun a b -> Int.compare a.start_ b.start_) |> Option.value_exn in
-  print_endline (Printf.sprintf "Lowest range is %d-%d" lowest_range.start_ lowest_range.end_);
-  lowest_range.start_
+  List.min_elt locations ~compare:(fun a b -> Int.compare a.start_ b.start_) |> Option.value_exn |> (fun x -> x.start_)
 ;;
