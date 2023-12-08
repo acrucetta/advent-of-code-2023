@@ -10,6 +10,9 @@
     util) 
   (preprocess
     (pps
-     ppx_jane))
+     ppx_jane
+     ppx_deriving.show
+     ppx_deriving.std
+     ppx_deriving.ord))
   (flags
     -open Core))

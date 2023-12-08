@@ -82,12 +82,9 @@ let print_int_list_list =
 let part1 input =
   let records = parse_races input in
   let winning_times = map records ~f:(fun record -> calculate_charging_times record []) in
-  print_int (length winning_times);
-  print_int (length (hd_exn winning_times));
   let count_winning_times = map winning_times ~f:(fun times -> length times) in
   let product = fold count_winning_times ~init:1 ~f:( * ) in
-  print_endline (Printf.sprintf "Winning Times: %d" product);
-  -1
+  product
 ;;
 
 let part2 input =

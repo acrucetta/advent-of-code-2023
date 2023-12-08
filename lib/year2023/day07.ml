@@ -40,8 +40,8 @@ open List
 let sp on = Str.split (Str.regexp on)
 
 type card =
-  | Ace | King | Queen | Jack | Ten | Nine | Eight | Seven | Six | Five | Four | Three | Two
-  [@@deriving compare]
+  | Ace | King | Queen | Jack | Ten | Nine | Eight | Seven | Six | Five | Four | Three | Two | Joker
+  [@@deriving compare, show]
 
 let card_to_int = function
   | Ace -> 14
@@ -57,6 +57,7 @@ let card_to_int = function
   | Four -> 4
   | Three -> 3
   | Two -> 2
+  | Joker -> 1
 
 type hand_type = 
   | FiveOfAKind 
@@ -66,24 +67,16 @@ type hand_type =
   | TwoPair
   | OnePair
   | HighCard
-  [@@deriving compare, enumerate, equal]
+  [@@deriving compare, enumerate, equal, show]
 
 type round = {
-  hand: card list;
+  cards: card list;
   bid: int;
   hand_type: hand_type;
 }
 
-(* [hand_to_type hand] returns the type [hand_type] of the hand.
-
-  To do this, we need to parse each distinct string in the hand and count how many
-  cards of the same type we have. Then we match them to the hand_type. If there are
-  no matches, we have a high card.
-
-  To do this, we will create a frequency map with each string.
- *)
-
 let hand_to_type hand =
+  print_endline hand;
   let freq_map = String.fold hand ~init:(Map.empty (module Char)) ~f:(fun acc c ->
     match Map.find acc c with
     | Some v -> Map.set acc ~key:c ~data:(v + 1)
@@ -100,22 +93,140 @@ let hand_to_type hand =
   | [5] -> FiveOfAKind
   | _ -> failwith "Invalid hand"
 
+let print_int_list lst = 
+  List.map lst ~f:(fun i -> string_of_int i) |> String.concat ~sep:" "
+
+let find_match_with_joker freq_values num_jokers =
+  match freq_values with 
+  | [1; 4] | [5] -> FiveOfAKind
+  | [1;1;3] -> if num_jokers > 0 then FourOfAKind else ThreeOfAKind
+  | [2;3] -> 
+      begin match num_jokers with
+      | 0 -> FullHouse
+      | 1 -> FourOfAKind
+      | 2 -> FiveOfAKind
+      | _ -> failwith "Invalid hand"
+      end
+  | [1;2;2] -> 
+      begin match num_jokers with
+      | 0 -> TwoPair
+      | 1 -> ThreeOfAKind
+      | 2 -> FourOfAKind
+      | _ -> failwith "Invalid hand"
+      end
+  | [1;1;1;2] -> 
+      begin match num_jokers with
+      | 0 -> OnePair
+      | 1 -> TwoPair
+      | 2 -> ThreeOfAKind
+      | _ -> failwith "Invalid hand"
+      end
+  | [1;1;1;1;1] -> 
+      begin match num_jokers with
+      | 0 -> HighCard
+      | 1 -> OnePair
+      | _ -> failwith "Invalid hand"
+      end
+    | _ -> failwith "Invalid hand"
+
+
+let hand_to_type' hand =
+  let freq_map = String.fold hand ~init:(Map.empty (module Char)) ~f:(fun acc c ->
+    match Map.find acc c with
+    | Some v -> Map.set acc ~key:c ~data:(v + 1)
+    | None -> Map.set acc ~key:c ~data:1
+  ) in
+  let num_jokers = Map.find freq_map 'J' |> Option.value ~default:0 in
+  let freq_values = Map.data freq_map |> List.sort ~compare:Int.compare in
+  find_match_with_joker freq_values num_jokers
+;;
+
+let hand_to_cards hand =
+  let cards = String.to_list hand in
+  let cards = List.map cards ~f:(fun c ->
+    match c with
+    | 'A' -> Ace
+    | 'K' -> King
+    | 'Q' -> Queen
+    | 'J' -> Joker
+    | 'T' -> Ten
+    | '9' -> Nine
+    | '8' -> Eight
+    | '7' -> Seven
+    | '6' -> Six
+    | '5' -> Five
+    | '4' -> Four
+    | '3' -> Three
+    | '2' -> Two
+    | _ -> failwith "Invalid card"
+  ) in
+  cards
+
 let parse_rounds input =
   let lines = sp "\n" input in
   let rounds = map ~f:(fun line ->
     let line = sp " " line in
     let hand = nth_exn line 0 in
     let bid = nth_exn line 1 |> Int.of_string in
+    let cards = hand_to_cards hand in
     let hand_type = hand_to_type hand in
-    { hand; bid; hand_type }
+    {cards; bid; hand_type}
   ) lines in
   rounds
 ;;
 
+let parse_rounds' input =
+  let lines = sp "\n" input in
+  let rounds = map ~f:(fun line ->
+    let line = sp " " line in
+    let hand = nth_exn line 0 in
+    let bid = nth_exn line 1 |> Int.of_string in
+    let cards = hand_to_cards hand in
+    let hand_type = hand_to_type' hand in
+    {cards; bid; hand_type}
+  ) lines in
+  rounds
+
+let rec compare_cards_lists lst1 lst2 = 
+  match (lst1 , lst2) with
+  | ([], []) -> 0
+  | ([], _) -> -1
+  | (_, []) -> 1
+  | (h1::t1, h2::t2) ->
+      match compare_card h1 h2 with
+      | 0 -> compare_cards_lists t1 t2
+      | cmp -> cmp
+
+let compare_round round1 round2 = 
+  match compare_hand_type round1.hand_type round2.hand_type with
+  | 0 ->
+      compare_cards_lists (round1.cards) (round2.cards)
+  | cmp -> cmp
+;;
+
+let print_round round = 
+  let cards = List.map round.cards ~f:(fun c -> show_card c) |> String.concat ~sep:"" in
+  Printf.printf "%s %d %s\n" cards round.bid (show_hand_type round.hand_type)
+
 let part1 input =
-  -1
+  let rounds = parse_rounds input in
+  let sorted_rounds = List.sort rounds ~compare:compare_round in
+  let scores = List.mapi sorted_rounds ~f:(fun i round ->
+    let rank = List.length sorted_rounds - i in
+    rank * round.bid
+  ) in
+  let score = List.fold scores ~init:0 ~f:(+) in
+  score
 ;;
 
 let part2 input =
-  -1
+  let rounds = parse_rounds' input in
+  let sorted_rounds = List.sort rounds ~compare:compare_round in
+  let scores = List.mapi sorted_rounds ~f:(fun i round ->
+    let rank = List.length sorted_rounds - i in
+    print_round round;
+    rank * round.bid
+  ) in
+  let score = List.fold scores ~init:0 ~f:(+) in
+  score
 ;;

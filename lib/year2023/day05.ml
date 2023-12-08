@@ -142,10 +142,10 @@ let parse_maps input =
           start_ = overlap.start_ + offset;
           end_ = overlap.end_ + offset;
         } in
-        print_endline (Printf.sprintf "Seed range %d-%d matched to the source range %d-%d, offset %d, resulting in %d-%d" seed_range.start_ seed_range.end_ range.source_start range.source_end offset new_range.start_ new_range.end_);
+        (* print_endline (Printf.sprintf "Seed range %d-%d matched to the source range %d-%d, offset %d, resulting in %d-%d" seed_range.start_ seed_range.end_ range.source_start range.source_end offset new_range.start_ new_range.end_);*)
         new_range
       else
-        let () = print_endline (Printf.sprintf "Seed range %d-%d did not match to the source range %d-%d" seed_range.start_ seed_range.end_ range.source_start range.source_end) in
+        (*let () = print_endline (Printf.sprintf "Seed range %d-%d did not match to the source range %d-%d" seed_range.start_ seed_range.end_ range.source_start range.source_end) in*)
         find_in_map_ranges seed_range other_ranges
 
 let rec find_in_map seed map =
@@ -162,6 +162,8 @@ let rec find_location_range seed_range maps =
   | [] -> seed_range
   | map::other_maps -> 
     let locations = find_in_map_ranges seed_range map in
+    find_location_range locations other_maps
+;;
 
 
 let rec find_location_seed seed maps =
