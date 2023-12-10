@@ -85,10 +85,10 @@ let hand_to_type hand =
   let freq_map = Map.data freq_map |> List.sort ~compare:Int.compare in
   match freq_map with
   | [1; 1; 1; 1; 1] -> HighCard
-  | [2; 3] -> FullHouse
   | [1; 1; 1; 2] -> OnePair
   | [1; 2; 2] -> TwoPair
   | [1; 1; 3] -> ThreeOfAKind
+  | [2; 3] -> FullHouse
   | [1; 4] -> FourOfAKind
   | [5] -> FiveOfAKind
   | _ -> failwith "Invalid hand"
@@ -103,8 +103,22 @@ let hand_to_type' hand =
     | None -> Map.set acc ~key:c ~data:1
   ) in
   let num_jokers = Map.find freq_map 'J' |> Option.value ~default:0 in
-  let freq_values = Map.data freq_map |> List.sort ~compare:Int.compare in
-  find_match_with_joker freq_values num_jokers
+  let freq_nojokers = Map.remove freq_map 'J' in
+  let freq_values = Map.data freq_nojokers |> List.sort ~compare:Int.compare |> List.rev in
+  let freq_values = List.mapi freq_values ~f:(fun i v ->
+    if i = 0 then v + num_jokers else v
+  ) |> List.sort ~compare:Int.compare in
+  if num_jokers = 5 then FiveOfAKind
+  else 
+  match freq_values with
+  | [1; 1; 1; 1; 1] -> HighCard
+  | [1; 1; 1; 2] -> OnePair
+  | [1; 2; 2] -> TwoPair
+  | [1; 1; 3] -> ThreeOfAKind
+  | [2; 3] -> FullHouse
+  | [1; 4] -> FourOfAKind
+  | [5] -> FiveOfAKind
+  | _ -> print_int_list freq_values; failwith "Invalid hand"
 ;;
 
 let hand_to_cards hand =
