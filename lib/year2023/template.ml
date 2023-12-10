@@ -1,6 +1,13 @@
 open List
+module P = Util.Parser
+open P.Syntax
 
-let sp on = Str.split (Str.regexp on)
+(* Day XX: 
+
+
+*)
+
+let sp ~on = Str.split (Str.regexp on)
 
 let part1 input =
   -1

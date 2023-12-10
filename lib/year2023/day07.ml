@@ -40,13 +40,14 @@ open List
 let sp on = Str.split (Str.regexp on)
 
 type card =
-  | Ace | King | Queen | Ten | Nine | Eight | Seven | Six | Five | Four | Three | Two | Joker
+  | Ace | King | Queen | Jack | Ten | Nine | Eight | Seven | Six | Five | Four | Three | Two | Joker
   [@@deriving compare, show]
 
 let card_to_int = function
   | Ace -> 14
   | King -> 13
   | Queen -> 12
+  | Jack -> 11
   | Ten -> 10
   | Nine -> 9
   | Eight -> 8
@@ -94,24 +95,6 @@ let hand_to_type hand =
 
 let print_int_list lst = 
   List.map lst ~f:(fun i -> string_of_int i) |> String.concat ~sep:" "
-
-let find_match_with_joker freq_values num_jokers =
-  let max_freq = List.hd_exn (List.rev (List.sort ~compare:Int.compare freq_values)) in
-  match (max_freq, num_jokers) with
-  | (5, _) -> FiveOfAKind
-  | (4, _) -> FourOfAKind
-  | (3, n) when n > 0 -> FourOfAKind
-  | (3, _) -> ThreeOfAKind
-  | (2, n) when n >= 2 -> FourOfAKind
-  | (2, n) when n = 1 -> FullHouse
-  | (2, _) -> if List.length freq_values = 3 then TwoPair else OnePair
-  | (1, n) when n >= 4 -> FourOfAKind
-  | (1, n) when n = 3 -> FullHouse
-  | (1, n) when n = 2 -> TwoPair
-  | (1, n) when n = 1 -> OnePair
-  | (1, _) -> HighCard
-  | _ -> failwith "Invalid hand"
-
 
 let hand_to_type' hand =
   let freq_map = String.fold hand ~init:(Map.empty (module Char)) ~f:(fun acc c ->
