@@ -86,5 +86,27 @@ let part1 input =
 ;;
 
 let part2 input =
-  -1
+  let graph = P.parse_exn input_p input in
+  let is_start = Str.string_match (Str.regexp "A$") in
+  let is_end = Str.string_match (Str.regexp "Z$") in
+  let map = graph.map in 
+  let dirs = graph.directions in
+  let all_starts = Map.fold map ~init:[] ~f:(fun ~key ~data acc ->
+      if is_start key then key :: acc else acc) in
+  let traverse_graph (steps, node) dir = 
+    if is_end node
+    then Error steps
+    else ( 
+      let left,right = Map.find_exn map node in
+      match dir with 
+      | L -> Ok (steps + 1, left)
+      | R -> Ok (steps + 1, right))
+  in 
+  let counts_steps = List.map ~f:(fun start -> 
+      dirs
+      |> Sequence.fold_result ~init:(0,start) ~f:traverse_graph
+      |> Result.error
+      |> Option.value_exn) all_starts
+  in
+  counts_steps
 ;;
