@@ -82,13 +82,14 @@ let part1 input =
   dirs
   |> Sequence.fold_result ~init:(0,"AAA") ~f:traverse_graph
   |> Result.error
-  |> Option.value_exn
+  |> Option.value_exn;
+  -1
 ;;
 
 let part2 input =
   let graph = P.parse_exn input_p input in
-  let is_start = Str.string_match (Str.regexp "A$") in
-  let is_end = Str.string_match (Str.regexp "Z$") in
+  let is_start str = String.is_suffix str ~suffix:"A" in
+  let is_end str = String.is_suffix str ~suffix:"Z" in
   let map = graph.map in 
   let dirs = graph.directions in
   let all_starts = Map.fold map ~init:[] ~f:(fun ~key ~data acc ->
@@ -108,5 +109,6 @@ let part2 input =
       |> Result.error
       |> Option.value_exn) all_starts
   in
-  counts_steps
+  counts_steps;
+  -1
 ;;
