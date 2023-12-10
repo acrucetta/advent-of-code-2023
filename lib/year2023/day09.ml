@@ -51,6 +51,11 @@ let rec predict_last_value all_diffs acc =
   | [] -> acc
   | x::xs -> predict_last_value xs (acc + last_exn x)
 
+let rec predict_first_value all_diffs acc =
+  match all_diffs with
+  | [] -> acc
+  | x::xs -> predict_first_value xs (hd_exn x - acc)
+
 let print_int_list_list = 
   List.iter ~f:(fun l -> List.iter ~f:(Printf.printf "%d ") l; Printf.printf "\n")
 ;;
@@ -63,5 +68,8 @@ let part1 input =
 ;;
 
 let part2 input =
-  -1
+  let histories = get_histories input in
+  let predictions = map ~f:(fun h -> predict_first_value (calculate_all_differences h [h]) 0) histories in 
+  let prediction_sum = List.fold_left ~f:(+) ~init:0 predictions in
+  prediction_sum
 ;;
