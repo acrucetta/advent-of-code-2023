@@ -39,12 +39,35 @@ let sp ~on = Str.split (Str.regexp on)
 
 type direction = N | S | E | W
 
+let directon_to_coord = function
+  | N -> (0, -1)
+  | S -> (0, 1)
+  | E -> (1, 0)
+  | W -> (-1, 0)
+
+let char_to_coordinates = function
+  | '-' -> [E; W]
+  | '|' -> [N; S]
+  | 'L' -> [N; E]
+  | 'J' -> [N; W]
+  | '7' -> [S; W]
+  | 'F' -> [S; E]
+  | _ -> []
+
 let build_grid input =
   input
   |> String.split_lines
   |> List.concat_mapi ~f:(fun y line ->
     line |> String.to_list |> List.mapi ~f:(fun x c -> (x, y), c))
   |> CoordMap.of_alist_exn
+;;
+
+let neighbors maze (x,y) = 
+  let n = [(x, y-1); (x, y+1); (x-1, y); (x+1, y)] in 
+  maze 
+  |> Map.to_alist
+  |> List.filter ~f:(fun ((x', y'), c) -> List.mem n (x', y'))
+
 ;;
 
 let find_start maze =
@@ -54,10 +77,18 @@ let find_start maze =
   |> Option.value_exn
 ;;
 
+let print_maze maze = 
+  maze 
+  |> Map.to_alist
+  |> List.iter ~f:(fun (k, c) -> Printf.printf "%s - value: %s \n" (Coord.show k) (Char.to_string c))
+
 let part1 input =
   let maze = build_grid input in
+  print_maze maze;
   let start = find_start maze in
-  start;
+  print_endline (Coord.show start);
+  let neighbors = neighbors maze start in
+  neighbors;
   -1
 ;;
 

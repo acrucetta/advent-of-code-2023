@@ -21,11 +21,8 @@ let drop l ~n = Core.List.drop l n
 let string_to_arr (str : string) : char array = 
   Array.of_list (List.init (String.length str) (String.get str))
 
-(* Print list as [a;b;c;d] *)
-let print_list (lst : 'a list) : unit =
-  Printf.printf "[ ";
-  List.iter lst ~f:(fun x -> Printf.printf "%s ;" x);
-  Printf.printf "]\n"
+let print_char_list (lst : char list) : unit =
+  List.iter lst ~f:(fun x -> Printf.printf "%c" x)
 
 let rec print_hash (hash : (string, int) Hashtbl.t) : unit =
   Hashtbl.iteri hash ~f:(fun ~key ~data ->
