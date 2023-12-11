@@ -28,28 +28,36 @@ In the loop above, we start at S and try to find the max position in that loop f
 
 *)
 
+module Coord = struct
+  type t = int * int [@@deriving show, eq, ord, sexp]
+end
+
+module CoordMap = Map.Make(Coord)
+module CoordSet = Set.Make(Coord)
+
 let sp ~on = Str.split (Str.regexp on)
 
-let print_2d_array arr =
-  Array.iteri
-    ~f:(fun i row ->
-      Array.iteri
-        ~f:(fun j col ->
-          Printf.printf "%s" col)
-        row;
-      Printf.printf "\n")
-    arr
-;;
+type direction = N | S | E | W
 
 let build_grid input =
-  let rows = sp ~on:"\n" input in
-  let matrix = map ~f:(fun row -> sp ~on:"" row) rows in
-  Array.of_list (map ~f:(fun row -> Array.of_list row) matrix)
+  input
+  |> String.split_lines
+  |> List.concat_mapi ~f:(fun y line ->
+    line |> String.to_list |> List.mapi ~f:(fun x c -> (x, y), c))
+  |> CoordMap.of_alist_exn
+;;
+
+let find_start maze =
+  maze
+  |> Map.to_alist
+  |> List.find_map ~f:(fun (k, c) -> if Char.equal 'S' c then Some k else None)
+  |> Option.value_exn
 ;;
 
 let part1 input =
   let maze = build_grid input in
-  print_2d_array maze;
+  let start = find_start maze in
+  start;
   -1
 ;;
 
