@@ -39,25 +39,11 @@ let sp ~on = Str.split (Str.regexp on)
 
 type direction = N | S | E | W [@@deriving show, eq, ord, sexp]
 
-let directon_to_coord = function
-  | N -> (0, -1)
-  | S -> (0, 1)
-  | E -> (1, 0)
-  | W -> (-1, 0)
-
-let next_coord (x,y) d = 
-  let (dx, dy) = directon_to_coord d in
-  (x + dx, y + dy)
-
-let char_to_coordinates = function
-  | '-' -> [E; W]
-  | '|' -> [N; S]
-  | 'L' -> [N; E]
-  | 'J' -> [N; W]
-  | '7' -> [S; W]
-  | 'F' -> [S; E]
-  | '.' -> []
-  | _ -> []
+let move (x, y) = function
+  | N -> (x, y-1)
+  | S -> (x, y+1)
+  | E -> (x+1, y)
+  | W -> (x-1, y)
 
 let build_grid input =
   input
@@ -68,61 +54,49 @@ let build_grid input =
 ;;
 
 let neighbors maze (x,y) = 
-  let directions = [(N, (x, y-1)); (S, (x, y+1)); (E, (x+1, y)); (W, (x-1, y))] in
-  let valid_directions = List.filter ~f:(fun (_, (x,y)) -> Map.mem maze (x,y)) directions in
-  let chars = valid_directions |> List.map ~f:(fun (d, (x,y)) -> (d, Map.find_exn maze (x,y) )) in
-  let valid_chars = List.filter ~f:(fun (d,c) ->
-    match (d,c) with
-    | (N, '|') | (S, '|') 
-    | (E, '-') | (W, '-')
-    | (N, 'L') | (E, 'L')
-    | (S, 'L')
-    | (N, 'J') | (W, 'J')
-    | (S ,'J')
-    | (S, '7') | (W, '7')
-    | (N, '7') | (E, '7')
-    | (S, 'F') | (E, 'F') 
-    | (N, 'F') -> true
-    | _ -> false) chars in
-  valid_chars
+  [(N, (x, y-1)); (S, (x, y+1)); (E, (x+1, y)); (W, (x-1, y))]
+  |> List.filter_map ~f:(fun (d, c) -> Map.find maze c |> Option.map ~f:(fun c -> (d, c)))
 ;;
 
-let dfs_path (maze : char CoordMap.t) (start : int * int) =
-  let rec loop visited current_node current_steps max_steps =
-    let neighbors = neighbors maze current_node in
-    let next_nodes = List.map ~f:(fun (d, c) -> next_coord current_node d) neighbors in
-    let unvisited = List.filter ~f:(fun n -> not (Set.mem visited n)) next_nodes in
-    match unvisited with
-    | [] -> max max_steps current_steps
-    | _ -> 
-      List.fold_left unvisited ~init:max_steps ~f:(
-        fun acc_max_steps next_node ->
-          let visited = Set.add visited next_node in
-          loop visited next_node (current_steps + 1) acc_max_steps)
-  in
-  loop (CoordSet.singleton start) start 0 0
-;;
+let initial_direction maze start =
+  start 
+  |> neighbors maze
+  |> List.find_map ~f:(function
+    | N, v when List.mem ['|'; '7'; 'F'] v ~equal:Char.equal -> Some (N, v)
+    | S, v when List.mem ['-'; 'J'; '7'] v ~equal:Char.equal -> Some (S, v)
+    | E, v when List.mem ['|'; 'J'; 'L'] v ~equal:Char.equal -> Some (E, v)
+    | W, v when List.mem ['-'; 'F'; 'L'] v ~equal:Char.equal -> Some (W, v)
+    | _ -> None)
+  |> Option.value_exn
 
-let bfs_path maze start =
-  let queue = Queue.create () in
-  Queue.enqueue queue start;
-  let visited = CoordSet.singleton start in
-  let rec loop queue visited current_steps max_steps =
-    let curr_node = Queue.dequeue_exn queue in
-    (* TODO: Solve when the coordinates are not in the bounds of the maze *)
-    let neighbors = neighbors maze curr_node in
-    let next_nodes = List.map ~f:(fun (d, c) -> next_coord curr_node d) neighbors in
-    let unvisited = List.filter ~f:(fun n -> not (Set.mem visited n)) next_nodes in
-    Queue.enqueue_all queue unvisited;
-    match queue with
-    | queue when Queue.is_empty queue -> max max_steps current_steps
-    | _ -> 
-      List.fold_left unvisited ~init:max_steps ~f:(
-        fun acc_max_steps next_node ->
-          let visited = Set.add visited next_node in
-          loop queue visited (current_steps + 1) acc_max_steps)
+let next_dir maze d coord =
+  let c = Map.find_exn maze coord in
+  match d, c with
+  | N, '|' -> N
+  | N, 'F' -> E
+  | N, '7' -> W
+  | S, '|' -> S
+  | S, 'J' -> W
+  | S, 'L' -> E
+  | W, 'F' -> S
+  | W, '-' -> W
+  | W, 'L' -> N
+  | E, '-' -> E
+  | E, 'J' -> N
+  | E, '7' -> S
+  | _ -> failwith "Invalid direction"
+
+let traverse maze start dir =
+  let rec loop path coord dir = 
+    let coord' = move coord dir in
+    let path' = Set.add path coord' in
+    if Coord.equal coord' start then path'
+    else (
+      let dir' = next_dir maze dir coord' in
+      loop path' coord' dir'
+    )
   in
-  loop queue visited 0 0
+  loop CoordSet.empty start dir
 
 let find_start maze =
   maze
@@ -144,12 +118,10 @@ let print_maze maze =
 let part1 input =
   let maze = build_grid input in
   let start = find_start maze in
-  Printf.printf "start: %s \n" (Coord.show start);
-  let neighbors = neighbors maze start in
-  let max_steps = bfs_path maze start in
-  Printf.printf "max steps: %d \n"
-  max_steps;
-  -1
+  let directions, coordinates = initial_direction maze start in
+  let path = traverse maze start directions in 
+  let path_length = Set.length path in
+  path_length / 2
 ;;
 
 let part2 input =
