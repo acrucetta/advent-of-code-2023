@@ -1,9 +1,9 @@
 let input = {|
-.....
-.S-7.
-.|.|.
-.L-J.
-.....
+..F7.
+.FJ|.
+SJ.L7
+|F--J
+LJ...
 |}
 
 let%expect_test "2023 day10 part1" =
