@@ -1,0 +1,18 @@
+
+
+
+Day 11
+
+Expanding rows and cols
+
+If row contains only . add additional row
+If col contains only . add additional col
+
+[[],[],[]]
+
+x -> i, 1; i, 2...
+y -> i, 1;...
+
+Then; build map of coord
+If initial galaxy at i -> add extra col or row
+
