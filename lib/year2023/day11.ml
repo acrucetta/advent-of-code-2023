@@ -38,67 +38,56 @@ open P.Syntax
     - Map of Ints?
 *)
 
-let sp ~on = Str.split (Str.regexp on)
-
 module Coord = struct
-  type t = int * int [@@deriving show, sexp, compare, equal]
+  type t = int * int [@@deriving equal, compare, sexp]
 end
 
-module CoordMap = Map.Make(Coord)
-module IntMap = Map.Make(Int)
+module IntMap = Map.Make (Int)
+module CoordMap = Map.Make (Coord)
 
-let manhattan (x1,y1) (x2,y2) =
-  abs (x1 - x2) + abs (y1 - y2)
+let parse input = input |> String.split_lines |> List.map ~f:String.to_list
 
-let init_galaxy input =
-  input
-  |> String.split_lines
-  |> List.map ~f:String.to_list
-;;
-
-let is_row_empty row =
-  List.for_all ~f:(fun c -> c = '.') row
-;;
-
-(* 
-  Build a map with id as the row and the value as the amount to expand.
-  We set it as 2 by default. 
- *)
-let expand init_galaxy amount =
-  let get_counts row =
-    row
-    |> List.concat_mapi ~f:(fun i row ->
-        i, if is_row_empty row then amount else 1)
+let expand amount galaxy =
+  let build_counts l =
+    l
+    |> List.mapi ~f:(fun i line ->
+      i, if List.for_all line ~f:(Char.equal '.') then amount else 1)
     |> IntMap.of_alist_exn
   in
-  get_counts (List.transpose_exn init_galaxy), get_counts init_galaxy
+  build_counts (List.transpose_exn galaxy), build_counts galaxy
 ;;
 
-let build_grid init_galaxy =
-    init_galaxy
-    |> List.concat_mapi ~f:(fun row_i row ->
-      row
-    |> List.mapi ~f:(fun col_i col ->
-      (row_i, col_i), col))
-    |> CoordMap.of_alist_exn
-;;
-
-(* Get X and Y coordinates for planets within the galaxy
-  We have a map of (x,y) and we need to filter the values
-  within that map for only the pairs with # then we need
-  to remove the duplicates in those pairs
- *)
-let get_pairs galaxy =
+let to_grid galaxy =
   galaxy
-    |> Map.filter ~f:(Char.equal '#')
+  |> List.concat_mapi ~f:(fun y line -> List.mapi line ~f:(fun x c -> (x, y), c))
+  |> CoordMap.of_alist_exn
 ;;
 
-let part1 input =
-  let galaxy = init_galaxy input in
-  let row_counts, col_counts = expand galaxy 2 in
-  row_counts, col_counts
+let pairs grid =
+  let rec all_pairs = function
+    | a :: rest -> List.map rest ~f:(fun b -> a, b) @ all_pairs rest
+    | [] -> []
+  in
+  grid |> Map.filter ~f:(Char.equal '#') |> Map.keys |> all_pairs
 ;;
 
-let part2 input =
-  -1
+let range a b = if a < b then List.range a b else List.range b a
+
+let distance x_counts y_counts ((x1, y1), (x2, y2)) =
+  let x_dist = range x1 x2 |> List.sum (module Int) ~f:(Map.find_exn x_counts) in
+  let y_dist = range y1 y2 |> List.sum (module Int) ~f:(Map.find_exn y_counts) in
+  x_dist + y_dist
 ;;
+
+let solve amount input =
+  let galaxy = parse input in
+  let x_counts, y_counts = expand amount galaxy in
+  galaxy
+  |> to_grid
+  |> pairs
+  |> List.map ~f:(distance x_counts y_counts)
+  |> Core.List.sum (module Int) ~f:Fn.id
+;;
+
+let part1 input = solve 2 input
+let part2 input = solve 1000000 input
