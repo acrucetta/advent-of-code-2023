@@ -19,13 +19,20 @@ open List
   fit the pattern.
  *)
 
-type spring_state = Operational | Broken | Unknown [@@deriving show]
+type spring_state = Operational | Broken | Unknown [@@deriving compare, sexp, hash]
+
+module Cache = struct 
+    type t = spring_state list * int [@@deriving compare, sexp, hash]
+end
+
+module MemoCache = Hashtbl.Make( Cache )
 
 type spring_row = {
   states: spring_state array;
   size: int list;
+  mutable arrangements: int;
 }
-[@@deriving show]
+[@@deriving compare, sexp]
 
 let char_to_spring_state = function
   | '.' -> Operational
@@ -37,7 +44,7 @@ let parse_spring_row line =
   let split_line = String.split_on_chars ~on:[' '] line in
   let states = List.map ~f:char_to_spring_state (nth_exn split_line 0 |> String.to_list) |> Array.of_list in
   let size = List.map ~f:Int.of_string (nth_exn split_line 1 |> String.split_on_chars ~on:[',']) in 
-  { states; size }
+  { states; size ; arrangements = 0 }
 
 let springs input =
   input
@@ -47,33 +54,54 @@ let springs input =
     )
 ;;
 
-(* 
-  We want to recurse over each possible
-  unkown and make it operational or broken
-  then check if the arrangement is valid; if
-  it's valid increment the count
- *)
-
-let is_valid_arrangement spring =
-  (* We want to compare the number of 
-     contiguous # with the int size *)
-  -1
+let size spring sizes =
+  let rec count_contiguous row num =
+    match row with
+    | [] -> num
+    | Operational::tl -> num
+    | Unknown::tl -> failwith "There shouldn't be unkowns in the arrangement"
+    | Broken::tl -> count_contiguous tl (num + 1)
+  in
+  let rec iterate_spring spring sizes =
+    match spring with
+    | [] -> sizes
+    | Unknown::tl -> failwith "There shouldn't be unkowns in the arrangement"
+    | Operational::tl -> iterate_spring tl sizes
+    | Broken::tl ->
+      let num = count_contiguous tl 1 in
+      iterate_spring tl (num::sizes)
+  in
+  let sizes = iterate_spring spring [] in
+  sizes
 ;;
 
-(* 
-Count the arrangements; check if they're valid
-and then add one to the final count of valid arrangements
-for each row 
-*)
-let count_arrangements spring =
-  -1
+let rec permute cache row idx arrangements =
+  let key = (Array.to_list row.states, idx) in
+  match Map.find_exn cache key with
+  | Some arrangements -> arrangements
+  | None ->
+    if idx = Array.length row.states then 
+      let sizes = size (Array.to_list row.states) [] in
+      if List.equal Int.equal sizes row.size then
+        permute cache row 0 (arrangements + 1)
+    else
+      match row.states.(idx) with
+      | _ -> permute cache row (idx + 1)
+      | Unknown ->
+          row.states.(idx) <- Operational;
+          let operational = permute cache row (idx + 1) arrangements in
+          row.states.(idx) <- Broken;
+          let broken = permute cache row (idx + 1) arrangements in
+          operational + broken
 ;;
+
 
 let part1 input =
   let sample_input = "???.### 1,1,3" in
   let row = parse_spring_row sample_input in
-  Printf.printf "%s\n" (show_spring_row row);
-  -1
+  let arrangements = permute (MemoCache.create ()) row 0 in
+  Printf.printf "Arrangements: %d\n" arrangements;
+  row.arrangements;
 ;;
 
 let part2 input =
@@ -81,3 +109,4 @@ let part2 input =
 ;;
 
 
+ 
