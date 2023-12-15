@@ -19,18 +19,17 @@ open List
   fit the pattern.
  *)
 
-type spring_state = Operational | Broken | Unknown [@@deriving compare, sexp, hash]
+type spring_state = Operational | Broken | Unknown [@@deriving compare, hash, sexp]
 
-module Cache = struct 
-    type t = spring_state list * int [@@deriving compare, sexp, hash]
+module CacheKey = struct 
+    type t = spring_state list * int [@@deriving hash, compare]
 end
 
-module MemoCache = Hashtbl.Make( Cache )
+module MemoCache = Hashtbl.Make( CacheKey )
 
 type spring_row = {
   states: spring_state array;
   size: int list;
-  mutable arrangements: int;
 }
 [@@deriving compare, sexp]
 
@@ -44,7 +43,7 @@ let parse_spring_row line =
   let split_line = String.split_on_chars ~on:[' '] line in
   let states = List.map ~f:char_to_spring_state (nth_exn split_line 0 |> String.to_list) |> Array.of_list in
   let size = List.map ~f:Int.of_string (nth_exn split_line 1 |> String.split_on_chars ~on:[',']) in 
-  { states; size ; arrangements = 0 }
+  { states; size }
 
 let springs input =
   input
@@ -90,7 +89,8 @@ let rec permute cache row idx  =
           let operational = permute cache row (idx + 1) in
           row.states.(idx) <- Broken;
           let broken = permute cache row (idx + 1) in
-          Map.add cache key (Some (operational + broken))
+          let total = operational + broken in
+          MemoCache.set cache ~key ~data:total;
       | _ -> permute cache row (idx + 1)
 ;;
 
