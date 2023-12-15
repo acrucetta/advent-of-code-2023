@@ -75,24 +75,23 @@ let size spring sizes =
   sizes
 ;;
 
-let rec permute cache row idx arrangements =
+let rec permute cache row idx  =
   let key = (Array.to_list row.states, idx) in
   match Map.find_exn cache key with
-  | Some arrangements -> arrangements
+  | Some cache -> cache
   | None ->
     if idx = Array.length row.states then 
-      let sizes = size (Array.to_list row.states) [] in
-      if List.equal Int.equal sizes row.size then
-        permute cache row 0 (arrangements + 1)
+      let curr_size = size (Array.to_list row.states) [] in
+      if List.equal Int.equal curr_size row.size then 1 else 0
     else
       match row.states.(idx) with
-      | _ -> permute cache row (idx + 1)
       | Unknown ->
           row.states.(idx) <- Operational;
-          let operational = permute cache row (idx + 1) arrangements in
+          let operational = permute cache row (idx + 1) in
           row.states.(idx) <- Broken;
-          let broken = permute cache row (idx + 1) arrangements in
-          operational + broken
+          let broken = permute cache row (idx + 1) in
+          Map.add cache key (Some (operational + broken))
+      | _ -> permute cache row (idx + 1)
 ;;
 
 
