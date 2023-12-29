@@ -19,19 +19,16 @@ open List
   fit the pattern.
  *)
 
-type spring_state = Operational | Broken | Unknown [@@deriving compare, hash, sexp]
+type spring_state = Operational | Broken | Unknown [@@deriving compare, sexp_of, hash]
 
 module CacheKey = struct 
-    type t = spring_state list * int [@@deriving hash, compare]
+    type t = spring_state list * int [@@deriving compare, sexp_of, hash]
 end
-
-module MemoCache = Hashtbl.Make( CacheKey )
 
 type spring_row = {
   states: spring_state array;
   size: int list;
 }
-[@@deriving compare, sexp]
 
 let char_to_spring_state = function
   | '.' -> Operational
@@ -41,6 +38,7 @@ let char_to_spring_state = function
 
 let parse_spring_row line =
   let split_line = String.split_on_chars ~on:[' '] line in
+  Printf.printf "Split line: %s\n" (List.sexp_of_t String.sexp_of_t split_line |> Sexp.to_string_hum);
   let states = List.map ~f:char_to_spring_state (nth_exn split_line 0 |> String.to_list) |> Array.of_list in
   let size = List.map ~f:Int.of_string (nth_exn split_line 1 |> String.split_on_chars ~on:[',']) in 
   { states; size }
@@ -74,33 +72,42 @@ let size spring sizes =
   sizes
 ;;
 
-let rec permute cache row idx  =
-  let key = (Array.to_list row.states, idx) in
-  match Map.find_exn cache key with
-  | Some cache -> cache
-  | None ->
-    if idx = Array.length row.states then 
-      let curr_size = size (Array.to_list row.states) [] in
-      if List.equal Int.equal curr_size row.size then 1 else 0
-    else
-      match row.states.(idx) with
-      | Unknown ->
-          row.states.(idx) <- Operational;
-          let operational = permute cache row (idx + 1) in
-          row.states.(idx) <- Broken;
-          let broken = permute cache row (idx + 1) in
-          let total = operational + broken in
-          MemoCache.set cache ~key ~data:total;
+let is_valid_arrangement spring sizes =
+  let calculated_sizes = size spring [] in
+  List.equal Int.equal calculated_sizes sizes
+;;
+
+let rec permute cache row idx = 
+  if idx = Array.length row.states then
+    if is_valid_arrangement (Array.to_list row.states) row.size 
+      then 1 
+      else 0
+  else
+    match Hashtbl.find cache idx with
+    | Some count -> count
+    | None ->
+      let count = match Array.get row.states idx with
+      | Unknown -> 
+        Array.set row.states idx Operational;
+        let op_count = permute cache row (idx + 1) in
+        Array.set row.states idx Broken;
+        let broken_count = permute cache row (idx + 1) in
+        Array.set row.states idx Unknown;
+        op_count + broken_count
       | _ -> permute cache row (idx + 1)
+      in 
+      Printf.printf "Count: %d\n" count;
+      Hashtbl.set cache ~key:idx ~data:count;
+      count
 ;;
 
 
 let part1 input =
-  let sample_input = "???.### 1,1,3" in
-  let row = parse_spring_row sample_input in
-  let arrangements = permute (MemoCache.create ()) row 0 in
-  Printf.printf "Arrangements: %d\n" arrangements;
-  row.arrangements;
+  let sample = "??##?? 2,2" in
+  let springs = springs sample in
+  let first_row = nth_exn springs 0 in
+  let cache = Hashtbl.create (module Int) in
+  permute cache first_row 0
 ;;
 
 let part2 input =

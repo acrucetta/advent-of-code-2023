@@ -45,4 +45,14 @@ the values of a ## then permutate the remaining ones
 Then we move each one ## and then continue permutating...
 
 
+Permutations
+
+Arrangements -> Row 
+
+Hash Table with: row states; size; int
+If we already had the same row states with size x and int; skip
+
+We want to cache the row state and the size so we don't repeat it; the arrangement count is just the outcome
+
+
 
